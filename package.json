@@ -1,0 +1,33 @@
+{
+  "name": "children-bank-india",
+  "version": "1.0.0",
+  "description": "A fun and educational banking & investment platform for kids",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve .",
+    "dev": "npx serve . -p 8000",
+    "deploy": "gh-pages -d ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/children-bank-india.git"
+  },
+  "keywords": [
+    "education",
+    "banking",
+    "kids",
+    "finance",
+    "investment",
+    "learning"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yourusername/children-bank-india/issues"
+  },
+  "homepage": "https://yourusername.github.io/children-bank-india/",
+  "devDependencies": {
+    "serve": "^14.2.0",
+    "gh-pages": "^6.0.0"
+  }
+}
