@@ -1,12 +1,17 @@
 {
   "name": "Children's Bank of India",
   "short_name": "CB India",
-  "description": "A fun and educational banking & investment platform for kids to learn about money management",
+  "description": "Educational banking and investment platform for kids to learn financial literacy",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#e0f7fa",
   "theme_color": "#4CAF50",
-  "orientation": "portrait-primary",
+  "categories": ["education", "finance", "kids", "learning"],
+  "lang": "en-IN",
+  "dir": "ltr",
+  
   "icons": [
     {
       "src": "assets/icons/icon-72.png",
@@ -57,19 +62,83 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["education", "finance", "kids"],
+  
   "screenshots": [
     {
       "src": "assets/screenshots/dashboard.png",
       "sizes": "1280x720",
       "type": "image/png",
-      "label": "Dashboard view"
+      "label": "Dashboard with account overview and quick actions",
+      "platform": "wide"
     },
     {
       "src": "assets/screenshots/investments.png",
       "sizes": "1280x720",
       "type": "image/png",
-      "label": "Investment center"
+      "label": "Investment center with FD, Crypto, and Stocks",
+      "platform": "wide"
+    },
+    {
+      "src": "assets/screenshots/mobile-dashboard.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "label": "Mobile dashboard view",
+      "platform": "narrow"
     }
-  ]
+  ],
+  
+  "shortcuts": [
+    {
+      "name": "View Balance",
+      "short_name": "Balance",
+      "description": "Check your CB Coin balance",
+      "url": "/#dashboard",
+      "icons": [
+        {
+          "src": "assets/icons/balance-96.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Invest Now",
+      "short_name": "Invest",
+      "description": "Explore investment options",
+      "url": "/#investments",
+      "icons": [
+        {
+          "src": "assets/icons/invest-96.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Play Games",
+      "short_name": "Games",
+      "description": "Play educational games",
+      "url": "/#games",
+      "icons": [
+        {
+          "src": "assets/icons/games-96.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  
+  "related_applications": [],
+  "prefer_related_applications": false,
+  
+  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7"
 }
