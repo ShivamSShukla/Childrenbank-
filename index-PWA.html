@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Children's Bank of India - Fun Banking & Investing for Kids</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Educational banking and investment platform for kids">
+    <meta name="theme-color" content="#4CAF50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CB India">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+    <link rel="manifest" href="manifest-pwa.json">
+    
+    <!-- Fonts & Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Stylesheet - change based on your structure -->
+    <link rel="stylesheet" href="main.css">
+    <!-- If using folders: <link rel="stylesheet" href="css/main.css"> -->
+</head>
+<body>
+    <!-- App Install Banner -->
+    <div id="install-banner" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: linear-gradient(135deg, #4CAF50, #2196F3); color: white; padding: 15px; text-align: center; z-index: 10000; box-shadow: 0 -4px 12px rgba(0,0,0,0.2);">
+        <div style="max-width: 600px; margin: 0 auto;">
+            <p style="margin: 0 0 10px 0; font-weight: bold;">📱 Install CB India App!</p>
+            <p style="margin: 0 0 15px 0; font-size: 0.9rem;">Add to home screen for quick access and offline mode</p>
+            <button id="install-button" class="btn" style="margin-right: 10px;">
+                <i class="fas fa-download"></i> Install
+            </button>
+            <button id="install-dismiss" class="btn btn-secondary">
+                Maybe Later
+            </button>
+        </div>
+    </div>
+
+    <!-- Rest of your HTML stays the same -->
+    <div class="container">
+        <!-- ... (all your existing HTML) ... -->
+        <header id="main-header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-piggy-bank"></i>
+                </div>
+                <h1>Children's Bank of India</h1>
+            </div>
+            <nav>
+                <ul id="main-nav"></ul>
+            </nav>
+        </header>
+
+        <!-- Add a simple placeholder for the rest -->
+        <div id="homepage" class="page-container active">
+            <div class="homepage card">
+                <h2>🌟 Welcome to Children's Bank of India! 🌟</h2>
+                <p>A fun and safe place for kids to learn about money, invest wisely, save for goals, and play educational games!</p>
+                <p style="margin-top: 20px;"><strong>PWA-ENABLED VERSION</strong> - Installable on any device!</p>
+                
+                <div style="margin-top: 50px;">
+                    <button id="get-started-btn" class="btn btn-secondary" style="font-size: 1.3rem; padding: 20px 40px;">
+                        <i class="fas fa-rocket"></i> Get Started Now!
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Include all other sections from your original index.html -->
+    </div>
+
+    <!-- Scripts - change based on your structure -->
+    <script src="investments.js"></script>
+    <script src="app.js"></script>
+    <!-- If using folders: <script src="js/investments.js"></script> -->
+
+    <!-- PWA Installation Script -->
+    <script>
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('✅ Service Worker registered!', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('❌ Service Worker registration failed:', error);
+                    });
+            });
+        }
+
+        // Install Prompt
+        let deferredPrompt;
+        const installBanner = document.getElementById('install-banner');
+        const installButton = document.getElementById('install-button');
+        const dismissButton = document.getElementById('install-dismiss');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('📱 Install prompt available');
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Show install banner
+            installBanner.style.display = 'block';
+        });
+
+        installButton.addEventListener('click', async () => {
+            if (!deferredPrompt) {
+                console.log('❌ Install prompt not available');
+                return;
+            }
+
+            installBanner.style.display = 'none';
+            deferredPrompt.prompt();
+
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`Install outcome: ${outcome}`);
+            
+            if (outcome === 'accepted') {
+                console.log('✅ User installed the app');
+            } else {
+                console.log('❌ User dismissed install');
+            }
+            
+            deferredPrompt = null;
+        });
+
+        dismissButton.addEventListener('click', () => {
+            installBanner.style.display = 'none';
+            // Remember dismissal
+            localStorage.setItem('installDismissed', 'true');
+        });
+
+        // Check if already dismissed
+        if (localStorage.getItem('installDismissed') === 'true') {
+            // Auto-hide for 7 days
+            const dismissedTime = localStorage.getItem('installDismissedTime') || 0;
+            const daysPassed = (Date.now() - dismissedTime) / (1000 * 60 * 60 * 24);
+            if (daysPassed < 7) {
+                // Don't show banner
+            } else {
+                localStorage.removeItem('installDismissed');
+            }
+        }
+
+        // Detect if app is installed
+        window.addEventListener('appinstalled', () => {
+            console.log('🎉 App successfully installed!');
+            installBanner.style.display = 'none';
+            
+            // Show success message
+            if (typeof App !== 'undefined' && App.showNotification) {
+                App.showNotification('App installed! Access from your home screen', 'success');
+            }
+        });
+
+        // Check if running as installed app
+        if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+            console.log('🚀 Running as installed app!');
+            // Add class to body for app-specific styling
+            document.body.classList.add('pwa-installed');
+        }
+
+        // Online/Offline Detection
+        window.addEventListener('online', () => {
+            console.log('🌐 Back online!');
+            if (typeof App !== 'undefined' && App.showNotification) {
+                App.showNotification('You are back online!', 'success');
+            }
+        });
+
+        window.addEventListener('offline', () => {
+            console.log('📴 You are offline');
+            if (typeof App !== 'undefined' && App.showNotification) {
+                App.showNotification('You are offline. Some features may be limited.', 'info');
+            }
+        });
+    </script>
+</body>
+</html>
