@@ -1,23 +1,38 @@
-// Main App State
+// Main Application Logic
 const App = {
     currentUser: null,
     users: [],
     transactions: [],
     goals: [],
+    investments: [],
     
     init() {
         this.loadData();
         this.initEventListeners();
         this.updateNavigation(false);
+        
+        // Initialize investments module
+        if (typeof Investments !== 'undefined') {
+            Investments.init();
+        }
     },
     
     loadData() {
+        // Load from localStorage
         this.users = JSON.parse(localStorage.getItem('cbi_users')) || [];
         this.transactions = JSON.parse(localStorage.getItem('cbi_transactions')) || [];
         this.goals = JSON.parse(localStorage.getItem('cbi_goals')) || [];
+        this.investments = JSON.parse(localStorage.getItem('cbi_investments')) || [];
         
+        // Initialize with sample data if empty
         if (this.users.length === 0) {
-            this.users = [{
+            this.initSampleData();
+        }
+    },
+    
+    initSampleData() {
+        this.users = [
+            {
                 id: 1,
                 name: "Rahul Sharma",
                 username: "rahul123",
@@ -25,54 +40,57 @@ const App = {
                 email: "parent@example.com",
                 age: 10,
                 accountNumber: "CB-100000001",
-                cashBalance: 5000,
-                totalEarned: 5000,
+                balance: 1250,
+                totalEarned: 1500,
                 joinDate: "2024-01-15",
                 avatarColor: "#FFC107"
-            }];
-            this.saveData();
-        }
+            }
+        ];
         
-        if (this.transactions.length === 0) {
-            this.transactions = [
-                { id: 1, userId: 1, type: 'deposit', amount: 1000, description: 'Welcome Bonus', date: '2024-01-15', time: '10:00' },
-                { id: 2, userId: 1, type: 'deposit', amount: 2000, description: 'Pocket Money', date: '2024-02-01', time: '10:30' },
-                { id: 3, userId: 1, type: 'deposit', amount: 2000, description: 'Birthday Gift', date: '2024-03-05', time: '14:20' }
-            ];
-            this.saveData();
-        }
+        this.transactions = [
+            { id: 1, userId: 1, type: 'deposit', amount: 500, description: 'Pocket Money', date: '2024-03-01', time: '10:30' },
+            { id: 2, userId: 1, type: 'deposit', amount: 300, description: 'Birthday Gift', date: '2024-03-05', time: '14:20' },
+            { id: 3, userId: 1, type: 'withdraw', amount: 150, description: 'Toy Purchase', date: '2024-03-10', time: '16:45' },
+            { id: 4, userId: 1, type: 'deposit', amount: 200, description: 'Chores', date: '2024-03-12', time: '09:15' },
+            { id: 5, userId: 1, type: 'deposit', amount: 400, description: 'Weekly Allowance', date: '2024-03-15', time: '11:00' }
+        ];
         
-        if (this.goals.length === 0) {
-            this.goals = [
-                { id: 1, userId: 1, name: 'New Bicycle', target: 5000, saved: 2000, icon: 'bicycle', createdAt: '2024-02-01' },
-                { id: 2, userId: 1, name: 'Video Game Console', target: 15000, saved: 5000, icon: 'game', createdAt: '2024-02-15' }
-            ];
-            this.saveData();
-        }
+        this.goals = [
+            { id: 1, userId: 1, name: 'New Bicycle', target: 2000, saved: 1250, icon: 'bicycle', createdAt: '2024-02-01' },
+            { id: 2, userId: 1, name: 'Video Game', target: 800, saved: 400, icon: 'game', createdAt: '2024-02-15' }
+        ];
+        
+        this.investments = [];
+        
+        this.saveData();
     },
     
     saveData() {
         localStorage.setItem('cbi_users', JSON.stringify(this.users));
         localStorage.setItem('cbi_transactions', JSON.stringify(this.transactions));
         localStorage.setItem('cbi_goals', JSON.stringify(this.goals));
+        localStorage.setItem('cbi_investments', JSON.stringify(this.investments));
     },
     
     initEventListeners() {
-        // Page navigation
-        document.getElementById('get-started-btn').addEventListener('click', () => this.showPage('login'));
-        document.getElementById('switch-to-register').addEventListener('click', (e) => {
+        // Get Started button
+        document.getElementById('get-started-btn')?.addEventListener('click', () => this.showPage('login'));
+        
+        // Form switches
+        document.getElementById('switch-to-register')?.addEventListener('click', (e) => {
             e.preventDefault();
             this.showPage('register');
         });
-        document.getElementById('switch-to-login').addEventListener('click', (e) => {
+        
+        document.getElementById('switch-to-login')?.addEventListener('click', (e) => {
             e.preventDefault();
             this.showPage('login');
         });
         
         // Forms
-        document.getElementById('login-form').addEventListener('submit', (e) => this.handleLogin(e));
-        document.getElementById('register-form').addEventListener('submit', (e) => this.handleRegister(e));
-        document.getElementById('logout-btn').addEventListener('click', () => this.handleLogout());
+        document.getElementById('login-form')?.addEventListener('submit', (e) => this.handleLogin(e));
+        document.getElementById('register-form')?.addEventListener('submit', (e) => this.handleRegister(e));
+        document.getElementById('logout-btn')?.addEventListener('click', () => this.handleLogout());
         
         // Modals
         document.querySelectorAll('.close-modal').forEach(btn => {
@@ -86,15 +104,11 @@ const App = {
         document.querySelectorAll('.action-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const action = e.currentTarget.getAttribute('data-action');
-                if (action === 'invest') {
-                    this.showSection('investments-section');
-                } else {
-                    this.openModal(action + '-modal');
-                }
+                this.openModal(action + '-modal');
             });
         });
         
-        // Section navigation
+        // Navigation buttons
         document.addEventListener('click', (e) => {
             if (e.target.closest('.nav-section-btn')) {
                 const section = e.target.closest('.nav-section-btn').getAttribute('data-section');
@@ -103,10 +117,10 @@ const App = {
         });
         
         // Transaction confirmations
-        document.getElementById('confirm-deposit').addEventListener('click', () => this.handleDeposit());
-        document.getElementById('confirm-withdraw').addEventListener('click', () => this.handleWithdraw());
-        document.getElementById('confirm-transfer').addEventListener('click', () => this.handleTransfer());
-        document.getElementById('confirm-goal').addEventListener('click', () => this.handleAddGoal());
+        document.getElementById('confirm-deposit')?.addEventListener('click', () => this.handleDeposit());
+        document.getElementById('confirm-withdraw')?.addEventListener('click', () => this.handleWithdraw());
+        document.getElementById('confirm-transfer')?.addEventListener('click', () => this.handleTransfer());
+        document.getElementById('confirm-goal')?.addEventListener('click', () => this.handleAddGoal());
         
         // Close modal on outside click
         window.addEventListener('click', (e) => {
@@ -120,16 +134,16 @@ const App = {
         document.querySelectorAll('.page-container').forEach(p => p.classList.remove('active'));
         
         if (page === 'home') {
-            document.getElementById('homepage').classList.add('active');
+            document.getElementById('homepage')?.classList.add('active');
             this.updateNavigation(false);
         } else if (page === 'login') {
-            document.getElementById('login-container').classList.add('active');
+            document.getElementById('login-container')?.classList.add('active');
             this.updateNavigation(false);
         } else if (page === 'register') {
-            document.getElementById('register-container').classList.add('active');
+            document.getElementById('register-container')?.classList.add('active');
             this.updateNavigation(false);
         } else if (page === 'dashboard') {
-            document.getElementById('dashboard').classList.add('active');
+            document.getElementById('dashboard')?.classList.add('active');
             this.updateNavigation(true);
             this.updateDashboard();
         }
@@ -137,18 +151,19 @@ const App = {
     
     updateNavigation(isLoggedIn) {
         const mainNav = document.getElementById('main-nav');
+        if (!mainNav) return;
+        
         mainNav.innerHTML = '';
         
         if (isLoggedIn) {
             const items = [
-                { text: 'Dashboard', section: 'transactions-section' },
-                { text: 'Investments', section: 'investments-section' },
-                { text: 'My Goals', section: 'goals-section' },
-                { text: 'Games', section: 'games-section' },
-                { text: 'Profile', section: 'profile-section' }
+                { text: 'Dashboard', section: 'dashboard-home-section' },
+                { text: 'Invest', section: 'investments-section' },
+                { text: 'Goals', section: 'goals-section' },
+                { text: 'Games', section: 'games-section' }
             ];
             
-            items.forEach((item, index) => {
+            items.forEach(item => {
                 const li = document.createElement('li');
                 const a = document.createElement('a');
                 a.textContent = item.text;
@@ -158,10 +173,11 @@ const App = {
                     document.querySelectorAll('#main-nav a').forEach(link => link.classList.remove('active'));
                     a.classList.add('active');
                 });
-                if (index === 0) a.classList.add('active');
                 li.appendChild(a);
                 mainNav.appendChild(li);
             });
+            
+            mainNav.querySelector('a')?.classList.add('active');
         } else {
             const items = [
                 { text: 'Home', action: () => this.showPage('home') },
@@ -185,15 +201,20 @@ const App = {
     
     showSection(sectionId) {
         document.querySelectorAll('.dashboard-section').forEach(s => s.classList.remove('active-section'));
-        document.getElementById(sectionId).classList.add('active-section');
+        document.getElementById(sectionId)?.classList.add('active-section');
+        
+        // Update investments when showing investment section
+        if (sectionId === 'investments-section') {
+            this.updateInvestments();
+        }
     },
     
     openModal(modalId) {
-        document.getElementById(modalId).classList.add('show');
+        document.getElementById(modalId)?.classList.add('show');
     },
     
     closeModal(modalId) {
-        document.getElementById(modalId).classList.remove('show');
+        document.getElementById(modalId)?.classList.remove('show');
     },
     
     handleLogin(e) {
@@ -233,8 +254,8 @@ const App = {
             email: email,
             age: parseInt(age),
             accountNumber: 'CB-' + (100000000 + this.users.length + 1),
-            cashBalance: 1000,
-            totalEarned: 1000,
+            balance: 100,
+            totalEarned: 100,
             joinDate: new Date().toISOString().split('T')[0],
             avatarColor: this.getRandomColor()
         };
@@ -245,7 +266,7 @@ const App = {
             id: this.transactions.length + 1,
             userId: newUser.id,
             type: 'deposit',
-            amount: 1000,
+            amount: 100,
             description: 'Welcome Bonus!',
             date: new Date().toISOString().split('T')[0],
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -255,7 +276,7 @@ const App = {
         this.saveData();
         this.currentUser = newUser;
         this.showPage('dashboard');
-        this.showNotification('Account created successfully! You received 1000 CB Coins welcome bonus!', 'success');
+        this.showNotification('Account created successfully! You received a welcome bonus of 100 CB Coins!', 'success');
         
         document.getElementById('register-form').reset();
     },
@@ -275,7 +296,7 @@ const App = {
             return;
         }
         
-        this.currentUser.cashBalance += amount;
+        this.currentUser.balance += amount;
         this.currentUser.totalEarned += amount;
         
         const newTransaction = {
@@ -306,12 +327,12 @@ const App = {
             return;
         }
         
-        if (amount > this.currentUser.cashBalance) {
-            this.showNotification('Insufficient cash balance for this withdrawal.', 'error');
+        if (amount > this.currentUser.balance) {
+            this.showNotification('Insufficient balance for this withdrawal.', 'error');
             return;
         }
         
-        this.currentUser.cashBalance -= amount;
+        this.currentUser.balance -= amount;
         
         const newTransaction = {
             id: this.transactions.length + 1,
@@ -347,7 +368,7 @@ const App = {
             return;
         }
         
-        if (amount > this.currentUser.cashBalance) {
+        if (amount > this.currentUser.balance) {
             this.showNotification('Insufficient balance for this transfer.', 'error');
             return;
         }
@@ -364,8 +385,8 @@ const App = {
             return;
         }
         
-        this.currentUser.cashBalance -= amount;
-        recipient.cashBalance += amount;
+        this.currentUser.balance -= amount;
+        recipient.balance += amount;
         
         const senderTransaction = {
             id: this.transactions.length + 1,
@@ -447,28 +468,27 @@ const App = {
     updateDashboard() {
         if (!this.currentUser) return;
         
-        // Calculate total portfolio value
-        const totalInvestments = Investments.getTotalValue(this.currentUser.id);
-        const totalPortfolio = this.currentUser.cashBalance + totalInvestments;
-        
         // Update user info
         document.getElementById('welcome-name').textContent = this.currentUser.name;
         document.getElementById('account-number').textContent = this.currentUser.accountNumber;
-        document.getElementById('current-balance').textContent = totalPortfolio.toLocaleString();
-        document.getElementById('cash-balance').textContent = this.currentUser.cashBalance.toLocaleString();
-        document.getElementById('investment-value').textContent = totalInvestments.toLocaleString();
+        document.getElementById('current-balance').textContent = this.currentUser.balance.toLocaleString();
         
-        // Calculate P&L
-        const pnl = Investments.getTotalPnL(this.currentUser.id);
-        const pnlElement = document.getElementById('total-pnl');
-        pnlElement.textContent = (pnl >= 0 ? '+' : '') + '₹' + Math.abs(pnl).toLocaleString();
-        pnlElement.className = 'portfolio-value ' + (pnl >= 0 ? 'profit' : 'loss');
+        // Update stats
+        const investmentValue = typeof Investments !== 'undefined' ? Investments.calculateTotalInvestmentValue() : 0;
+        const userGoals = this.goals.filter(g => g.userId === this.currentUser.id);
+        
+        document.getElementById('stat-savings').textContent = '₹' + this.currentUser.balance.toLocaleString();
+        document.getElementById('stat-investments').textContent = '₹' + Math.round(investmentValue).toLocaleString();
+        document.getElementById('stat-goals').textContent = userGoals.length;
+        document.getElementById('stat-earned').textContent = '₹' + this.currentUser.totalEarned.toLocaleString();
         
         // Update avatars
         const updateAvatar = (id) => {
             const avatar = document.getElementById(id);
-            avatar.textContent = this.currentUser.name.charAt(0).toUpperCase();
-            avatar.style.backgroundColor = this.currentUser.avatarColor;
+            if (avatar) {
+                avatar.textContent = this.currentUser.name.charAt(0).toUpperCase();
+                avatar.style.backgroundColor = this.currentUser.avatarColor;
+            }
         };
         updateAvatar('user-avatar');
         updateAvatar('profile-avatar');
@@ -480,50 +500,89 @@ const App = {
         document.getElementById('profile-join-date').value = new Date(this.currentUser.joinDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
         document.getElementById('profile-total-earned').value = this.currentUser.totalEarned.toLocaleString();
         
+        this.updateDashboardSummary();
+        this.updateRecentActivity();
         this.updateTransactions();
         this.updateGoals();
         this.updateGames();
         this.updateAchievements();
+        this.updateInvestments();
+    },
+    
+    updateDashboardSummary() {
+        const summary = document.getElementById('dashboard-summary');
+        if (!summary) return;
         
-        // Update investment section
-        if (typeof Investments !== 'undefined') {
-            Investments.updateDashboard();
+        const investmentValue = typeof Investments !== 'undefined' ? Investments.calculateTotalInvestmentValue() : 0;
+        const totalWealth = this.currentUser.balance + investmentValue;
+        
+        summary.innerHTML = `
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 15px; margin-bottom: 15px;">
+                <h3>Total Wealth</h3>
+                <div style="font-size: 2rem; font-weight: bold;">₹${Math.round(totalWealth).toLocaleString()}</div>
+                <p style="font-size: 0.9rem; opacity: 0.9;">Balance: ₹${this.currentUser.balance} | Investments: ₹${Math.round(investmentValue)}</p>
+            </div>
+            <p>💡 <strong>Tip:</strong> Try investing in Fixed Deposits for guaranteed returns!</p>
+        `;
+    },
+    
+    updateRecentActivity() {
+        const activity = document.getElementById('recent-activity');
+        if (!activity) return;
+        
+        const recentTransactions = this.transactions
+            .filter(t => t.userId === this.currentUser.id)
+            .sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time))
+            .slice(0, 5);
+        
+        if (recentTransactions.length === 0) {
+            activity.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No recent activity</p>';
+            return;
         }
+        
+        activity.innerHTML = recentTransactions.map(t => `
+            <div class="transaction">
+                <div>
+                    <div><strong>${t.description}</strong></div>
+                    <div style="font-size: 0.9rem; color: #666;">${t.date} at ${t.time}</div>
+                </div>
+                <div class="${t.type === 'deposit' ? 'transaction-income' : 'transaction-expense'}">
+                    ${t.type === 'deposit' ? '+' : '-'}₹${t.amount}
+                </div>
+            </div>
+        `).join('');
     },
     
     updateTransactions() {
         const list = document.getElementById('transaction-list');
-        list.innerHTML = '';
+        if (!list) return;
         
         const userTransactions = this.transactions
             .filter(t => t.userId === this.currentUser.id)
             .sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time))
-            .slice(0, 10);
+            .slice(0, 20);
         
         if (userTransactions.length === 0) {
             list.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No transactions yet. Make your first deposit!</p>';
             return;
         }
         
-        userTransactions.forEach(t => {
-            const div = document.createElement('div');
-            div.className = 'transaction';
-            div.innerHTML = `
+        list.innerHTML = userTransactions.map(t => `
+            <div class="transaction">
                 <div>
                     <div><strong>${t.description}</strong></div>
                     <div style="font-size: 0.9rem; color: #666;">${t.date} at ${t.time}</div>
                 </div>
-                <div class="${t.type === 'deposit' ? 'transaction-income' : 'transaction-expense'}">
-                    ${t.type === 'deposit' ? '+' : '-'}₹${t.amount.toLocaleString()}
+                <div class="${t.type === 'deposit' || t.type === 'investment' ? 'transaction-income' : 'transaction-expense'}">
+                    ${t.type === 'deposit' ? '+' : '-'}₹${t.amount}
                 </div>
-            `;
-            list.appendChild(div);
-        });
+            </div>
+        `).join('');
     },
     
     updateGoals() {
         const list = document.getElementById('goals-list');
-        list.innerHTML = '';
+        if (!list) return;
         
         const userGoals = this.goals.filter(g => g.userId === this.currentUser.id);
         
@@ -532,64 +591,62 @@ const App = {
             return;
         }
         
-        userGoals.forEach(goal => {
+        const icons = { bicycle: '🚲', game: '🎮', book: '📚', toy: '🧸', phone: '📱', laptop: '💻', other: '🎯' };
+        
+        list.innerHTML = userGoals.map(goal => {
             const progress = Math.min((goal.saved / goal.target) * 100, 100);
-            const icons = { bicycle: '🚲', game: '🎮', book: '📚', toy: '🧸', other: '🎯' };
             const icon = icons[goal.icon] || '🎯';
             
-            const div = document.createElement('div');
-            div.className = 'goal-item';
-            div.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h3>${icon} ${goal.name}</h3>
-                    <div>₹${goal.saved.toLocaleString()} / ₹${goal.target.toLocaleString()}</div>
-                </div>
-                <div class="goal-progress">
-                    <div class="goal-progress-bar" style="width: ${progress}%"></div>
-                </div>
-                <div style="font-size: 0.9rem; color: #666;">
-                    ${progress.toFixed(1)}% complete
+            return `
+                <div class="goal-item">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3>${icon} ${goal.name}</h3>
+                        <div>₹${goal.saved} / ₹${goal.target}</div>
+                    </div>
+                    <div class="goal-progress">
+                        <div class="goal-progress-bar" style="width: ${progress}%"></div>
+                    </div>
+                    <div style="font-size: 0.9rem; color: #666;">
+                        ${progress.toFixed(1)}% complete
+                    </div>
                 </div>
             `;
-            list.appendChild(div);
-        });
+        }).join('');
     },
     
     updateGames() {
         const games = [
-            { id: 1, name: 'Coin Counter', description: 'Learn to count money', icon: 'fas fa-coins', reward: 50 },
-            { id: 2, name: 'Savings Race', description: 'Race to save money', icon: 'fas fa-running', reward: 75 },
-            { id: 3, name: 'Budget Challenge', description: 'Plan a budget', icon: 'fas fa-chart-pie', reward: 100 },
-            { id: 4, name: 'Investment Quiz', description: 'Test your knowledge', icon: 'fas fa-question-circle', reward: 150 }
+            { id: 1, name: 'Coin Counter', description: 'Learn to count money', icon: 'fas fa-coins', reward: 10 },
+            { id: 2, name: 'Savings Race', description: 'Race to save money', icon: 'fas fa-running', reward: 15 },
+            { id: 3, name: 'Budget Challenge', description: 'Plan a budget', icon: 'fas fa-chart-pie', reward: 20 },
+            { id: 4, name: 'Money Quiz', description: 'Test your knowledge', icon: 'fas fa-question-circle', reward: 10 },
+            { id: 5, name: 'Investment Simulator', description: 'Learn investing', icon: 'fas fa-chart-line', reward: 25 },
+            { id: 6, name: 'Crypto Explorer', description: 'Understand crypto', icon: 'fab fa-bitcoin', reward: 20 }
         ];
         
         const grid = document.getElementById('games-grid');
-        grid.innerHTML = '';
+        if (!grid) return;
         
-        games.forEach(game => {
-            const div = document.createElement('div');
-            div.className = 'game-card';
-            div.innerHTML = `
+        grid.innerHTML = games.map(game => `
+            <div class="game-card" onclick="App.playGame(${game.id}, '${game.name}', ${game.reward})">
                 <i class="${game.icon}"></i>
                 <h3>${game.name}</h3>
                 <p>${game.description}</p>
                 <p><strong>Reward: ${game.reward} CB Coins</strong></p>
-            `;
-            div.addEventListener('click', () => this.playGame(game));
-            grid.appendChild(div);
-        });
+            </div>
+        `).join('');
     },
     
-    playGame(game) {
-        this.currentUser.cashBalance += game.reward;
-        this.currentUser.totalEarned += game.reward;
+    playGame(gameId, gameName, reward) {
+        this.currentUser.balance += reward;
+        this.currentUser.totalEarned += reward;
         
         const newTransaction = {
             id: this.transactions.length + 1,
             userId: this.currentUser.id,
             type: 'deposit',
-            amount: game.reward,
-            description: 'Reward from ' + game.name,
+            amount: reward,
+            description: 'Reward from ' + gameName + ' game',
             date: new Date().toISOString().split('T')[0],
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
@@ -598,37 +655,104 @@ const App = {
         this.updateUserData();
         this.updateDashboard();
         
-        this.showNotification('🎮 You earned ' + game.reward + ' CB Coins by playing ' + game.name + '!', 'success');
+        this.showNotification('🎮 You earned ' + reward + ' CB Coins by playing ' + gameName + '!', 'success');
     },
     
     updateAchievements() {
+        const userTransactionCount = this.transactions.filter(t => t.userId === this.currentUser.id).length;
+        const userInvestmentCount = this.investments.filter(i => i.userId === this.currentUser.id || true).length;
+        
         const achievements = [
-            { name: 'First Deposit', description: 'Made your first deposit', icon: 'fas fa-star', achieved: true },
-            { name: 'Savings Starter', description: 'Saved ₹1000+', icon: 'fas fa-piggy-bank', achieved: this.currentUser.cashBalance >= 1000 },
-            { name: 'Goal Getter', description: 'Set your first goal', icon: 'fas fa-bullseye', achieved: this.goals.filter(g => g.userId === this.currentUser.id).length > 0 },
-            { name: 'Investor', description: 'Made your first investment', icon: 'fas fa-chart-line', achieved: false },
-            { name: 'Game Master', description: 'Played all games', icon: 'fas fa-gamepad', achieved: false }
+            { name: 'First Deposit', description: 'Made your first deposit', icon: 'fas fa-star', achieved: userTransactionCount > 0 },
+            { name: 'Savings Starter', description: 'Saved ₹500+', icon: 'fas fa-piggy-bank', achieved: this.currentUser.balance >= 500 },
+            { name: 'Goal Getter', description: 'Set your first goal', icon: 'fas fa-bullseye', achieved: this.goals.some(g => g.userId === this.currentUser.id) },
+            { name: 'Transaction Pro', description: 'Made 10 transactions', icon: 'fas fa-exchange-alt', achieved: userTransactionCount >= 10 },
+            { name: 'Investor', description: 'Made first investment', icon: 'fas fa-chart-line', achieved: userInvestmentCount > 0 }
         ];
         
         const list = document.getElementById('achievements-list');
-        list.innerHTML = '';
+        if (!list) return;
         
-        achievements.forEach(a => {
-            const div = document.createElement('div');
-            div.className = 'achievement-item ' + (a.achieved ? 'achieved' : 'locked');
-            div.innerHTML = `
+        list.innerHTML = achievements.map(a => `
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; padding: 10px; border-radius: 10px; background-color: ${a.achieved ? '#E8F5E9' : '#F5F5F5'};">
                 <i class="${a.icon}" style="color: ${a.achieved ? '#4CAF50' : '#999'}; font-size: 1.5rem;"></i>
                 <div>
                     <div><strong>${a.name}</strong></div>
                     <div style="font-size: 0.9rem; color: #666;">${a.description}</div>
                 </div>
+            </div>
+        `).join('');
+    },
+    
+    updateInvestments() {
+        const portfolioList = document.getElementById('portfolio-list');
+        if (!portfolioList) return;
+        
+        const userInvestments = this.investments.filter(inv => inv.userId === this.currentUser.id || !inv.userId);
+        
+        if (userInvestments.length === 0) {
+            portfolioList.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No investments yet. Start investing to grow your wealth!</p>';
+            return;
+        }
+        
+        portfolioList.innerHTML = userInvestments.map(inv => {
+            let typeClass = inv.type;
+            let profit = 0;
+            let profitPercent = 0;
+            let displayValue = inv.investedAmount;
+            
+            if (inv.type === 'fd') {
+                const daysElapsed = Math.floor((Date.now() - new Date(inv.startDate).getTime()) / (1000 * 60 * 60 * 24));
+                const progress = Math.min(daysElapsed / inv.duration, 1);
+                const earnedInterest = (inv.maturityAmount - inv.investedAmount) * progress;
+                displayValue = inv.investedAmount + earnedInterest;
+                profit = earnedInterest;
+                profitPercent = (profit / inv.investedAmount) * 100;
+            } else {
+                displayValue = inv.currentValue || inv.investedAmount;
+                profit = displayValue - inv.investedAmount;
+                profitPercent = (profit / inv.investedAmount) * 100;
+            }
+            
+            return `
+                <div class="portfolio-item ${typeClass}">
+                    <div class="portfolio-header">
+                        <div>
+                            <strong>${inv.planName || inv.assetName}</strong>
+                            <div style="font-size: 0.9rem; color: #666;">
+                                ${inv.type === 'fd' ? 'Fixed Deposit' : inv.type === 'crypto' ? 'Cryptocurrency' : 'Stock'}
+                            </div>
+                        </div>
+                        <button class="btn btn-danger btn-small" data-sell-investment="${inv.id}">
+                            <i class="fas fa-times"></i> Sell
+                        </button>
+                    </div>
+                    <div class="portfolio-value">
+                        <div>Invested: ₹${inv.investedAmount.toLocaleString()}</div>
+                        <div>Current: ₹${Math.round(displayValue).toLocaleString()}</div>
+                        <div class="${profit >= 0 ? 'profit-positive' : 'profit-negative'}">
+                            ${profit >= 0 ? '+' : ''}₹${Math.round(profit).toLocaleString()} (${profitPercent.toFixed(2)}%)
+                        </div>
+                    </div>
+                    ${inv.type === 'fd' ? `
+                        <div style="font-size: 0.9rem; color: #666; margin-top: 10px;">
+                            Maturity: ${new Date(inv.maturityDate).toLocaleDateString()}
+                        </div>
+                    ` : ''}
+                    ${inv.type === 'crypto' || inv.type === 'stock' ? `
+                        <div style="font-size: 0.9rem; color: #666; margin-top: 10px;">
+                            Quantity: ${inv.quantity.toFixed(inv.type === 'crypto' ? 6 : 0)} ${inv.symbol || ''}
+                        </div>
+                    ` : ''}
+                </div>
             `;
-            list.appendChild(div);
-        });
+        }).join('');
     },
     
     showNotification(message, type) {
         const notification = document.getElementById('notification');
+        if (!notification) return;
+        
         notification.textContent = message;
         
         const colors = {
